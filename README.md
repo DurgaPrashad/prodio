@@ -7,6 +7,7 @@ https://github.com/user-attachments/assets/475cb04e-2c73-4acc-9127-80871b2e6849
 A web application for translating Kannada audio files to English text using AI models.
 
 ## Features
+![image](https://github.com/user-attachments/assets/2f6f9b1e-91e2-4b8f-b6d4-87ca1301e188)
 
 - Audio file upload and management
 - Kannada speech recognition using Whisper
