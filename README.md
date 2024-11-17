@@ -1,6 +1,7 @@
 # Audio Translation System
 
 A web application for translating Kannada audio files to English text using AI models.
+![image](https://github.com/user-attachments/assets/82b4533a-df11-4308-a250-5f63dbe5c3ad)
 
 ## Features
 
