@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Audio Processing Platform</title>
+    <link rel="stylesheet" href="static/css/styles.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Left Section - Playlist -->
+        <div class="playlist-section">
+            <div class="upload-container">
+                <input type="file" id="audio-upload" accept="audio/*" class="file-input">
+                <button id="upload-btn" class="upload-btn">Upload Audio</button>
+                <div id="upload-time" class="upload-time"></div> <!-- Show upload time here -->
+            </div>
+            <div class="playlist" id="playlist">
+                <!-- Playlist items will be dynamically added here -->
+            </div>
+        </div>
+
+        <!-- Right Section - Player and Output -->
+        <div class="player-section">
+            <div class="audio-players">
+                <div class="original-audio">
+                    <h3>Original Audio</h3>
+                    <audio id="audio-player" controls>
+                        Your browser does not support the audio element.
+                    </audio>
+                </div>
+                <div class="translated-audio">
+                    <h3>English Audio</h3>
+                    <audio id="translated-audio-player" controls>
+                        Your browser does not support the audio element.
+                    </audio>
+                </div>
+                <div class="player-controls">
+                    <button id="prev-btn" class="control-btn">⏮</button>
+                    <button id="play-btn" class="control-btn">▶</button>
+                    <button id="next-btn" class="control-btn">⏭</button>
+                </div>
+            </div>
+            <div class="output-container">
+                <div class="transcription-box">
+                    <h3>Transcription (Kannada)</h3>
+                    <div id="transcription-content" class="content-box"></div>
+                </div>
+                <div class="translation-box">
+                    <h3>Translation (English)</h3>
+                    <div id="translation-content" class="content-box"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Event listener for upload button
+        document.getElementById("upload-btn").addEventListener("click", async function() {
+            const fileInput = document.getElementById("audio-upload");
+            const file = fileInput.files[0];
+            if (!file) {
+                alert("Please select a file to upload.");
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append("audio", file);
+
+            const uploadStartTime = Date.now(); // Start timing the upload
+
+            try {
+                const response = await fetch("/api/upload", {
+                    method: "POST",
+                    body: formData
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to upload audio');
+                }
+
+                const data = await response.json();
+                const { id, name, transcription, translation, translated_audio_url } = data;
+
+                // Add file to playlist
+                const playlistItem = document.createElement("div");
+                playlistItem.classList.add("playlist-item");
+                playlistItem.innerHTML = `
+                    <span>${name}</span>
+                    <button onclick="loadAudio('${id}')">Play</button>
+                `;
+                document.getElementById("playlist").appendChild(playlistItem);
+
+                // Update the transcription and translation on the right
+                document.getElementById("transcription-content").textContent = transcription;
+                document.getElementById("translation-content").textContent = translation;
+
+                // Set audio players
+                document.getElementById("audio-player").src = `/api/audio/${id}`;
+                if (translated_audio_url) {
+                    document.getElementById("translated-audio-player").src = translated_audio_url;
+                } else {
+                    document.getElementById("translated-audio-player").style.display = "none";
+                }
+
+                // Calculate and display upload time
+                const uploadEndTime = Date.now();
+                const uploadDuration = (uploadEndTime - uploadStartTime) / 1000; // Duration in seconds
+                document.getElementById("upload-time").textContent = `Upload completed in ${uploadDuration.toFixed(2)} seconds.`;
+
+            } catch (error) {
+                console.error("Error uploading file:", error);
+                alert("Error uploading file. Please try again.");
+            }
+        });
+
+        // Load audio file from playlist and update players
+        function loadAudio(fileId) {
+            fetch(`/api/audio/${fileId}`)
+                .then(response => response.blob())
+                .then(blob => {
+                    const url = URL.createObjectURL(blob);
+                    document.getElementById("audio-player").src = url;
+                    document.getElementById("audio-player").play();
+                })
+                .catch(error => {
+                    console.error("Error loading audio:", error);
+                    alert("Error loading audio. Please try again.");
+                });
+
+            // Fetch and update transcription and translation
+            fetch(`/api/transcription/${fileId}`)
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById("transcription-content").textContent = data.text;
+                })
+                .catch(error => console.error("Error fetching transcription:", error));
+
+            fetch(`/api/translation/${fileId}`)
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById("translation-content").textContent = data.text;
+                })
+                .catch(error => console.error("Error fetching translation:", error));
+        }
+
+        // Load the playlist dynamically when the page loads
+        window.onload = function() {
+            fetch("/api/playlist")
+                .then(response => response.json())
+                .then(data => {
+                    data.forEach(item => {
+                        const playlistItem = document.createElement("div");
+                        playlistItem.classList.add("playlist-item");
+                        playlistItem.innerHTML = ` 
+                            <span>${item.name}</span>
+                            <button onclick="loadAudio('${item.id}')">Play</button>
+                        `;
+                        document.getElementById("playlist").appendChild(playlistItem);
+                    });
+                })
+                .catch(error => console.error("Error loading playlist:", error));
+        };
+    </script>
+
+    <script src="static/js/audio-player.js"></script>
+    <script src="static/js/playlist.js"></script>
+    <script src="static/js/app.js"></script>
+</body>
+</html>
