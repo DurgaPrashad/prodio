@@ -94,6 +94,8 @@ The project follows a clear separation of concerns:
 4. Push to the branch
 5. Create a new Pull Request
 
+Follow for More projects
+
 ## License
 
 This project is licensed under the MIT License - see the LICENSE file for details.
